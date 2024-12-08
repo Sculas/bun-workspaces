@@ -14,32 +14,32 @@ export interface CliGlobalOptions {
 
 export type CliGlobalOptionName = keyof CliGlobalOptions;
 
-const GLOBAL_OPTIONS: {
-  [K in CliGlobalOptionName]: {
-    shortName: string;
-    description: string;
-    defaultValue: CliGlobalOptions[K];
-    values?: readonly CliGlobalOptions[K][];
-    param?: string;
+const defineGlobalOptions = (program: Command, defaultCwd: string) => {
+  const globalOptions: {
+    [K in CliGlobalOptionName]: {
+      shortName: string;
+      description: string;
+      defaultValue: CliGlobalOptions[K];
+      values?: readonly CliGlobalOptions[K][];
+      param?: string;
+    };
+  } = {
+    logLevel: {
+      shortName: "l",
+      description: "Log levels",
+      defaultValue: logger.level as LogLevel,
+      values: LOG_LEVELS,
+      param: "level",
+    },
+    cwd: {
+      shortName: "d",
+      description: "Working directory",
+      defaultValue: defaultCwd ?? process.cwd(),
+      param: "dir",
+    },
   };
-} = {
-  logLevel: {
-    shortName: "l",
-    description: "Log levels",
-    defaultValue: logger.level as LogLevel,
-    values: LOG_LEVELS,
-    param: "level",
-  },
-  cwd: {
-    shortName: "d",
-    description: "Working directory",
-    defaultValue: process.cwd(),
-    param: "dir",
-  },
-};
 
-const defineGlobalOptions = (program: Command) => {
-  Object.entries(GLOBAL_OPTIONS).forEach(
+  Object.entries(globalOptions).forEach(
     ([name, { shortName, description, defaultValue, param, values }]) => {
       const option = new Option(
         `-${shortName} --${name}${param ? ` <${param}>` : ""}`,
@@ -72,8 +72,9 @@ const applyGlobalOptions = (options: CliGlobalOptions) => {
 export const initializeWithGlobalOptions = (
   program: Command,
   args: string[],
+  defaultCwd: string,
 ) => {
-  defineGlobalOptions(program);
+  defineGlobalOptions(program, defaultCwd);
 
   program.allowUnknownOption(true);
   program.parseOptions(args);

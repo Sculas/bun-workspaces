@@ -26,6 +26,7 @@ bw ls
 # List workspace names only
 bw list-workspaces --name-only
 
+
 # List all workspace scripts
 bw list-scripts
 # List script names only
@@ -54,4 +55,12 @@ bw run-script my-script --parallel
 
 # Append args to a script
 bw run-script my-script --args "--my --args"
+
+# Help (--help can also be passed to any command)
+bw help
+bw --help
+
+# Pass --cwd to any command
+bw --cwd /path/to/your/project ls
+bw --cwd /path/to/your/project run-script my-script
 ```

@@ -3,25 +3,29 @@ import { logger } from "../internal/logger";
 import type { Project } from "../project";
 import type { Workspace } from "../workspaces";
 
-const printWorkspaceInfo = (workspace: Workspace) => {
-  console.log(`Workspace: ${workspace.name}`);
-  console.log(` - Path: ${workspace.path}`);
-  console.log(` - Glob Match: ${workspace.matchPattern}`);
-  console.log(
-    ` - Scripts: ${Object.keys(workspace.packageJson.scripts)
-      .sort()
-      .join(", ")}`,
-  );
-};
+export interface ProjectCommandsContext {
+  project: Project;
+  program: Command;
+  printLines: (...lines: string[]) => void;
+}
 
-const printScriptInfo = (script: string, workspaces: Workspace[]) => {
-  console.log(`Script: ${script}`);
-  workspaces.forEach((workspace) => {
-    console.log(` - ${workspace.name}`);
-  });
-};
+const createWorkspaceInfoLines = (workspace: Workspace) => [
+  `Workspace: ${workspace.name}`,
+  ` - Path: ${workspace.path}`,
+  ` - Glob Match: ${workspace.matchPattern}`,
+  ` - Scripts: ${Object.keys(workspace.packageJson.scripts).sort().join(", ")}`,
+];
 
-const listWorkspaces = (program: Command, project: Project) => {
+const createScriptInfoLines = (script: string, workspaces: Workspace[]) => [
+  `Script: ${script}`,
+  ...workspaces.map((workspace) => ` - ${workspace.name}`),
+];
+
+const listWorkspaces = ({
+  program,
+  project,
+  printLines,
+}: ProjectCommandsContext) => {
   program
     .command("list-workspaces")
     .aliases(["ls", "list"])
@@ -34,17 +38,28 @@ const listWorkspaces = (program: Command, project: Project) => {
         logger.debug("Showing more metadata");
       }
 
+      const lines: string[] = [];
       project.workspaces.forEach((workspace) => {
         if (options.nameOnly) {
-          console.log(workspace.name);
+          lines.push(workspace.name);
         } else {
-          printWorkspaceInfo(workspace);
+          lines.push(...createWorkspaceInfoLines(workspace));
         }
       });
+
+      if (!lines.length) {
+        lines.push("No workspaces found");
+      }
+
+      printLines(...lines);
     });
 };
 
-const listScripts = (program: Command, project: Project) => {
+const listScripts = ({
+  program,
+  project,
+  printLines,
+}: ProjectCommandsContext) => {
   program
     .command("list-scripts")
     .description("List all scripts available with their workspaces")
@@ -53,19 +68,30 @@ const listScripts = (program: Command, project: Project) => {
       logger.debug("Command: List scripts");
 
       const scripts = project.listScriptsWithWorkspaces();
+      const lines: string[] = [];
       Object.values(scripts)
         .sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB))
         .forEach(({ name, workspaces }) => {
           if (options.nameOnly) {
-            console.log(name);
+            lines.push(name);
           } else {
-            printScriptInfo(name, workspaces);
+            lines.push(...createScriptInfoLines(name, workspaces));
           }
         });
+
+      if (!lines.length) {
+        lines.push("No scripts found");
+      }
+
+      printLines(...lines);
     });
 };
 
-const workspaceInfo = (program: Command, project: Project) => {
+const workspaceInfo = ({
+  program,
+  project,
+  printLines,
+}: ProjectCommandsContext) => {
   program
     .command("workspace-info <workspace>")
     .aliases(["info"])
@@ -79,32 +105,45 @@ const workspaceInfo = (program: Command, project: Project) => {
         return;
       }
 
-      printWorkspaceInfo(workspace);
+      printLines(...createWorkspaceInfoLines(workspace));
     });
 };
 
-const scriptInfo = (program: Command, project: Project) => {
+const scriptInfo = ({
+  program,
+  project,
+  printLines,
+}: ProjectCommandsContext) => {
   program
     .command("script-info <script>")
     .description("Show information about a script")
-    .action((script) => {
+    .option("--workspaces-only", "Only show script's workspace names")
+    .action((script, options) => {
       logger.debug(`Command: Script info for ${script}`);
 
       const scripts = project.listScriptsWithWorkspaces();
       const scriptMetadata = scripts[script];
       if (!scriptMetadata) {
-        logger.error(
+        printLines(
           `Script not found: ${JSON.stringify(
             script,
           )} (available: ${Object.keys(scripts).join(", ")})`,
         );
         return;
       }
-      printScriptInfo(script, scriptMetadata.workspaces);
+      printLines(
+        ...(options.workspacesOnly
+          ? scriptMetadata.workspaces.map(({ name }) => name)
+          : createScriptInfoLines(script, scriptMetadata.workspaces)),
+      );
     });
 };
 
-const runScript = (program: Command, project: Project) => {
+const runScript = ({
+  program,
+  project,
+  printLines,
+}: ProjectCommandsContext) => {
   program
     .command("run <script> [workspaces...]")
     .description("Run a script in all workspaces")
@@ -126,18 +165,25 @@ const runScript = (program: Command, project: Project) => {
         : project.listWorkspacesWithScript(script).map(({ name }) => name);
 
       if (!workspaces.length) {
-        logger.error(`No workspaces found for script: ${script}`);
-        process.exit(1);
+        program.error(
+          `No workspaces found for script ${JSON.stringify(script)}`,
+        );
       }
 
-      const scriptCommands = workspaces.map((workspaceName) =>
-        project.createScriptCommand({
-          scriptName: script,
-          workspaceName,
-          method: "cd",
-          args: options.args.replace(/<workspace>/g, workspaceName),
-        }),
-      );
+      let scriptCommands: ReturnType<typeof project.createScriptCommand>[];
+      try {
+        scriptCommands = workspaces.map((workspaceName) =>
+          project.createScriptCommand({
+            scriptName: script,
+            workspaceName,
+            method: "cd",
+            args: options.args.replace(/<workspace>/g, workspaceName),
+          }),
+        );
+      } catch (error) {
+        program.error((error as Error).message);
+        throw error;
+      }
 
       const runCommand = async ({
         command,
@@ -155,7 +201,7 @@ const runScript = (program: Command, project: Project) => {
         const silent = logger.level === "silent";
 
         if (!silent) {
-          console.log(
+          printLines(
             `Running script ${JSON.stringify(
               scriptName,
             )} in workspace ${JSON.stringify(workspace.name)}`,
@@ -179,9 +225,11 @@ const runScript = (program: Command, project: Project) => {
         };
       };
 
-      const handleError = (error: unknown) => {
+      const handleError = (error: unknown, workspace: string) => {
         logger.error(error);
-        process.exit(1);
+        program.error(
+          `Script failed in ${workspace} (error: ${JSON.stringify((error as Error).message ?? error)})`,
+        );
       };
 
       const handleResult = ({
@@ -193,37 +241,43 @@ const runScript = (program: Command, project: Project) => {
           `${success ? "✅" : "❌"} ${workspace.name}: ${scriptName}`,
         );
         if (!success) {
-          process.exit(1);
+          program.error(
+            `Script ${scriptName} failed in workspace ${workspace.name}`,
+          );
         }
       };
 
       if (options.parallel) {
+        let i = 0;
         for await (const result of await Promise.allSettled(
           scriptCommands.map(runCommand),
         )) {
           if (result.status === "rejected") {
-            handleError(result.reason);
+            handleError(result.reason, workspaces[i]);
           } else {
             handleResult(result.value);
           }
+          i++;
         }
       } else {
+        let i = 0;
         for (const command of scriptCommands) {
           try {
             const result = await runCommand(command);
             handleResult(result);
           } catch (error) {
-            handleError(error);
+            handleError(error, workspaces[i]);
           }
         }
+        i++;
       }
     });
 };
 
-export const defineProjectCommands = (program: Command, project: Project) => {
-  listWorkspaces(program, project);
-  listScripts(program, project);
-  workspaceInfo(program, project);
-  scriptInfo(program, project);
-  runScript(program, project);
+export const defineProjectCommands = (context: ProjectCommandsContext) => {
+  listWorkspaces(context);
+  listScripts(context);
+  workspaceInfo(context);
+  scriptInfo(context);
+  runScript(context);
 };
