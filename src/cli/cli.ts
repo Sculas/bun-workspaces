@@ -41,7 +41,6 @@ export const createCliProgram = ({
         process.exit(1);
       });
 
-
     process.on("unhandledRejection", errorListener);
 
     try {
