@@ -76,6 +76,10 @@ export const findWorkspaces = ({
     }
   }
 
+  workspaces.sort(
+    (a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path),
+  );
+
   return { workspaces };
 };
 

@@ -7,37 +7,37 @@ on:
   - workflow_dispatch
 
 jobs:
-  format_check_all:
-    name: Format Check All
+  format_check:
+    name: Format Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Setup Project
         uses: ./.github/actions/setup
-      - name: Format Check All
-        id: format-check-all
-        run: bun run format-check-all
-  type_check_all:
-    name: Type Check All
+      - name: Format Check
+        id: format-check
+        run: bun run format-check
+  type_check:
+    name: Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Setup Project
         uses: ./.github/actions/setup
-      - name: Type Check All
-        id: type-check-all
+      - name: Type Check
+        id: type-check
         run: bun run type-check
-  lint_all:
-    name: Lint All
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Setup Project
         uses: ./.github/actions/setup
-      - name: Lint All
-        id: lint-all
+      - name: Lint
+        id: lint
         run: bun run lint
-  test_all:
+  test:
     name: Test All
     runs-on: ubuntu-latest
     steps:
@@ -45,5 +45,5 @@ jobs:
       - name: Setup Project
         uses: ./.github/actions/setup
       - name: Run All Tests
-        id: test-all
+        id: test
         run: bun test
