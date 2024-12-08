@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json
+
+name: Check PR
+
+on:
+  - pull_request
+
+jobs:
+  validate_code:
+    name: Validate Code
+    uses: ./.github/workflows/validate_code.yml

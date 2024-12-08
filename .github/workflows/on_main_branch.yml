@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json
+
+name: On Main Branch Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate_code:
+    name: Validate Code
+    uses: ./.github/workflows/validate_code.yml

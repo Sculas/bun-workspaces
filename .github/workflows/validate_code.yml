@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json
+
+name: Validate Code
+
+on:
+  - workflow_call
+  - workflow_dispatch
+
+jobs:
+  format_check_all:
+    name: Format Check All
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Project
+        uses: ./.github/actions/setup
+      - name: Format Check All
+        id: format-check-all
+        run: bun run format-check-all
+  type_check_all:
+    name: Type Check All
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Project
+        uses: ./.github/actions/setup
+      - name: Type Check All
+        id: type-check-all
+        run: bun run type-check-all
+  lint_all:
+    name: Lint All
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Project
+        uses: ./.github/actions/setup
+      - name: Lint All
+        id: lint-all
+        run: bun run lint-all
+  test_all:
+    name: Test All
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Project
+        uses: ./.github/actions/setup
+      - name: Run All Tests
+        id: test-all
+        run: bun run test-all-sequential

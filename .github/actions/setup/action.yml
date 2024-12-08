@@ -1,0 +1,33 @@
+name: Setup Project
+description: Setup the project for the workflow
+
+runs:
+  using: composite
+  steps:
+    - name: Get Bun version
+      id: get-bun-version
+      shell: bash
+      run: |
+        BUN_VERSION=$(cat package.json | jq '.custom.bunVersion.build')
+        echo BUN_VERSION=$BUN_VERSION >> $GITHUB_ENV
+        echo "Bun lock version to be installed: $BUN_VERSION"
+
+    - name: Install Bun
+      id: install-bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ env.BUN_VERSION }}
+
+    - name: Bun Cache
+      id: bun-cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.bun
+        key: node-modules-${{ hashFiles('**/bun.lockb') }}
+        restore-keys: |
+          node-modules-
+
+    - name: Install Dependencies
+      id: install-deps
+      run: bun install --frozen-lockfile && bun run postinstall
+      shell: bash

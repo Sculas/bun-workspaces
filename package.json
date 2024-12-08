@@ -1,0 +1,31 @@
+{
+  "name": "bun-workspaces",
+  "version": "0.1.0-alpha-0",
+  "main": "src/index.ts",
+  "bin": {
+    "bun-workspaces": "NODE_ENV=production ./bin/cli.js"
+  },
+  "scripts": {
+    "cli": "NODE_ENV=production bun run bin/cli.js",
+    "cli:dev": "NODE_ENV=development bun run bin/cli.js",
+    "type-check": "tsc --noEmit"
+  },
+  "custom": {
+    "bunVersion": {
+      "build": "1.1.38",
+      "libraryConsumer": "^1.1.x"
+    }
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "bun-workspaces": "file:."
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
