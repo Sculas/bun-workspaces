@@ -1,9 +1,10 @@
 {
   "name": "bun-workspaces",
-  "version": "0.1.0-alpha-test-publish-0",
+  "version": "0.1.2",
   "main": "src/index.ts",
+  "homepage": "https://github.com/ScottMorse/bun-workspaces#readme",
   "bin": {
-    "bun-workspaces": "NODE_ENV=production ./bin/cli.js"
+    "bun-workspaces": "bin/cli.js"
   },
   "custom": {
     "bunVersion": {
