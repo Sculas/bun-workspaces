@@ -26,7 +26,6 @@ bw ls
 # List workspace names only
 bw list-workspaces --name-only
 
-
 # List all workspace scripts
 bw list-scripts
 # List script names only
@@ -38,6 +37,8 @@ bw info my-workspace
 
 # Get info about a script
 bw script-info my-script
+# Only print list of workspace names that have the script
+bw script-info my-script --workspaces-only
 
 # Run a script for all
 # workspaces that have it
@@ -53,7 +54,7 @@ bw run-script my-script workspace-a workspace-b
 # Run script in parallel for all workspaces
 bw run-script my-script --parallel
 
-# Append args to a script
+# Append args to each script call
 bw run-script my-script --args "--my --args"
 
 # Help (--help can also be passed to any command)
