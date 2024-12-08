@@ -31,7 +31,7 @@ const METHODS: Record<
   filter: ({ scriptName, workspace, args, rootDir }) => ({
     cwd: rootDir,
     command: `bun --silent run --filter=${JSON.stringify(
-      workspace.name
+      workspace.name,
     )} ${scriptName}${spaceArgs(args)}`,
   }),
 };

@@ -1,8 +1,8 @@
-import path from "path";
 import fs from "fs";
-import { ERRORS } from "./errors";
-import { logger } from "../internal/logger";
+import path from "path";
 import { Glob } from "bun";
+import { logger } from "../internal/logger";
+import { ERRORS } from "./errors";
 
 export const resolvePackageJsonPath = (directoryItem: string) => {
   if (path.basename(directoryItem) === "package.json") {
@@ -32,7 +32,7 @@ export const scanWorkspaceGlob = (glob: Glob, rootDir: string) =>
 const validateJsonRoot = (json: UnknownPackageJson) => {
   if (!json || typeof json !== "object" || Array.isArray(json)) {
     throw new ERRORS.InvalidPackageJson(
-      `Expected package.json to be an object, got ${typeof json}`
+      `Expected package.json to be an object, got ${typeof json}`,
     );
   }
 };
@@ -42,7 +42,7 @@ const validateName = (json: UnknownPackageJson) => {
     throw new ERRORS.NoWorkspaceName(
       `Expected package.json to have a string "name" field${
         json.name !== undefined ? ` (Received ${json.name})` : ""
-      }`
+      }`,
     );
   }
 
@@ -51,11 +51,11 @@ const validateName = (json: UnknownPackageJson) => {
 
 const validateWorkspacePattern = (
   workspacePattern: string,
-  rootDir: string
+  rootDir: string,
 ) => {
   if (typeof workspacePattern !== "string") {
     throw new ERRORS.InvalidWorkspacePattern(
-      `Expected workspace pattern to be a string, got ${typeof workspacePattern}`
+      `Expected workspace pattern to be a string, got ${typeof workspacePattern}`,
     );
   }
 
@@ -66,7 +66,7 @@ const validateWorkspacePattern = (
   const absolutePattern = path.resolve(rootDir, workspacePattern);
   if (!absolutePattern.startsWith(rootDir)) {
     throw new ERRORS.InvalidWorkspacePattern(
-      `Cannot resolve workspace pattern outside of root directory ${rootDir}: ${absolutePattern}`
+      `Cannot resolve workspace pattern outside of root directory ${rootDir}: ${absolutePattern}`,
     );
   }
 
@@ -75,13 +75,13 @@ const validateWorkspacePattern = (
 
 const validateWorkspacePatterns = (
   json: UnknownPackageJson,
-  rootDir: string
+  rootDir: string,
 ) => {
   const workspaces: string[] = [];
   if (json.workspaces) {
     if (!Array.isArray(json.workspaces)) {
       throw new ERRORS.InvalidWorkspaces(
-        `Expected package.json to have an array "workspaces" field`
+        `Expected package.json to have an array "workspaces" field`,
       );
     }
 
@@ -101,7 +101,7 @@ const validateScripts = (json: UnknownPackageJson) => {
     (typeof json.scripts !== "object" || Array.isArray(json.scripts))
   ) {
     throw new ERRORS.InvalidScripts(
-      `Expected package.json to have an object "scripts" field`
+      `Expected package.json to have an object "scripts" field`,
     );
   }
 
@@ -111,7 +111,7 @@ const validateScripts = (json: UnknownPackageJson) => {
         throw new ERRORS.InvalidScripts(
           `Expected workspace "${json.name}" script "${
             json.scripts
-          }" to be a string, got ${typeof value}`
+          }" to be a string, got ${typeof value}`,
         );
       }
     }
@@ -125,7 +125,7 @@ const validateScripts = (json: UnknownPackageJson) => {
 export const resolvePackageJsonContent = (
   packageJsonPath: string,
   rootDir: string,
-  validations: ("workspaces" | "name" | "scripts")[]
+  validations: ("workspaces" | "name" | "scripts")[],
 ): ResolvedPackageJsonContent => {
   rootDir = path.resolve(rootDir);
 
@@ -137,7 +137,7 @@ export const resolvePackageJsonContent = (
     throw new ERRORS.InvalidPackageJson(
       `Failed to read and parse package.json at ${packageJsonPath}: ${
         (error as Error).message
-      }`
+      }`,
     );
   }
 
@@ -147,7 +147,7 @@ export const resolvePackageJsonContent = (
     ...json,
     name: validations.includes("name")
       ? validateName(json)
-      : (json.name as string) ?? "",
+      : ((json.name as string) ?? ""),
     workspaces: validations.includes("workspaces")
       ? validateWorkspacePatterns(json, rootDir)
       : ((json?.workspaces ?? []) as string[]),

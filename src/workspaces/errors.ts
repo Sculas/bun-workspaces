@@ -7,5 +7,5 @@ export const ERRORS = defineErrors(
   "NoWorkspaceName",
   "InvalidScripts",
   "InvalidWorkspaces",
-  "InvalidWorkspacePattern"
+  "InvalidWorkspacePattern",
 );

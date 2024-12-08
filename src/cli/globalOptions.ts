@@ -1,5 +1,5 @@
-import { type Command, Option } from "commander";
 import path from "path";
+import { type Command, Option } from "commander";
 import { logger } from "../internal/logger";
 import { createProject } from "../project";
 
@@ -43,11 +43,11 @@ const defineGlobalOptions = (program: Command) => {
     ([name, { shortName, description, defaultValue, param, values }]) => {
       const option = new Option(
         `-${shortName} --${name}${param ? ` <${param}>` : ""}`,
-        description
+        description,
       ).default(defaultValue);
 
       program.addOption(values?.length ? option.choices(values) : option);
-    }
+    },
   );
 };
 
@@ -62,7 +62,7 @@ const applyGlobalOptions = (options: CliGlobalOptions) => {
   logger.debug(
     `Project: ${JSON.stringify(project.name)} (${
       project.workspaces.length
-    } workspace${project.workspaces.length === 1 ? "" : "s"})`
+    } workspace${project.workspaces.length === 1 ? "" : "s"})`,
   );
   logger.debug("Project root: " + path.resolve(project.rootDir));
 
@@ -71,7 +71,7 @@ const applyGlobalOptions = (options: CliGlobalOptions) => {
 
 export const initializeWithGlobalOptions = (
   program: Command,
-  args: string[]
+  args: string[],
 ) => {
   defineGlobalOptions(program);
 

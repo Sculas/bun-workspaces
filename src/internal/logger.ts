@@ -6,8 +6,8 @@ export const logger = createLogger({
     process.env.NODE_ENV === "test"
       ? "silent"
       : process.env.NODE_ENV === "development"
-      ? "debug"
-      : "info",
+        ? "debug"
+        : "info",
   transport: {
     target: "pino-pretty",
     options: {

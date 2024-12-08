@@ -1,12 +1,12 @@
-import { program, Option } from "commander";
-import { logger } from "../internal/logger";
-import { defineProjectCommands } from "./projectCommands";
-import { initializeWithGlobalOptions } from "./globalOptions";
+import { program } from "commander";
+import packageJson from "../../package.json";
 import {
   getRequiredBunVersion,
   validateCurrentBunVersion,
 } from "../internal/bunVersion";
-const packageJson = require("../../package.json");
+import { logger } from "../internal/logger";
+import { initializeWithGlobalOptions } from "./globalOptions";
+import { defineProjectCommands } from "./projectCommands";
 
 export interface Cli {
   run: (argv?: string | string[]) => Promise<void>;
@@ -29,7 +29,7 @@ export const createCli = (): Cli => {
       logger.error(
         `Bun version mismatch. Required: ${getRequiredBunVersion()}, Found: ${
           Bun.version
-        }`
+        }`,
       );
       process.exit(1);
     }

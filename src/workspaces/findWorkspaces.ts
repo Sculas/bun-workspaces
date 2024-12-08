@@ -1,14 +1,14 @@
 import fs from "fs";
 import path from "path";
-import type { Workspace } from "./workspace";
+import { Glob } from "bun";
+import { logger } from "../internal/logger";
+import { ERRORS } from "./errors";
 import {
   resolvePackageJsonContent,
   resolvePackageJsonPath,
   scanWorkspaceGlob,
 } from "./packageJson";
-import { logger } from "../internal/logger";
-import { ERRORS } from "./errors";
-import { Glob } from "bun";
+import type { Workspace } from "./workspace";
 
 export interface FindWorkspacesOptions {
   rootDir: string;
@@ -19,8 +19,8 @@ const validatePattern = (pattern: string) => {
   if (pattern.startsWith("!")) {
     logger.warn(
       `Negation patterns are not supported by Bun workspaces: ${JSON.stringify(
-        pattern
-      )}`
+        pattern,
+      )}`,
     );
     return false;
   }
@@ -34,7 +34,7 @@ const validateWorkspace = (workspace: Workspace, workspaces: Workspace[]) => {
 
   if (workspaces.find((ws) => ws.name === workspace.name)) {
     throw new ERRORS.DuplicateWorkspaceName(
-      `Duplicate workspace name found: ${JSON.stringify(workspace.name)}`
+      `Duplicate workspace name found: ${JSON.stringify(workspace.name)}`,
     );
   }
 
@@ -59,7 +59,7 @@ export const findWorkspaces = ({
         const packageJsonContent = resolvePackageJsonContent(
           packageJsonPath,
           rootDir,
-          ["name", "scripts"]
+          ["name", "scripts"],
         );
 
         const workspace: Workspace = {
@@ -89,7 +89,7 @@ export const findWorkspacesFromPackage = ({
   const packageJsonPath = path.join(rootDir, "package.json");
   if (!fs.existsSync(packageJsonPath)) {
     throw new ERRORS.PackageNotFound(
-      `No package.json found at ${packageJsonPath}`
+      `No package.json found at ${packageJsonPath}`,
     );
   }
 

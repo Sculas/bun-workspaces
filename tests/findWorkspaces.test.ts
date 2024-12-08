@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test";
+import { ERRORS } from "../src/workspaces/errors";
 import {
   findWorkspaces,
   findWorkspacesFromPackage,
 } from "../src/workspaces/findWorkspaces";
 import type { Workspace } from "../src/workspaces/workspace";
-import { ERRORS } from "../src/workspaces/errors";
 import { getProjectRoot } from "./testProjects";
 
 const simplifyExpectedWorkspacesResult = <
   T extends {
     workspaces: Partial<Workspace>[];
-  }
+  },
 >({
   workspaces,
   ...rest
@@ -116,8 +116,8 @@ test("Find workspaces basic behavior", async () => {
       findWorkspaces({
         rootDir: getProjectRoot("default"),
         workspaceGlobs: ["applications/*", "libraries/*"],
-      })
-    )
+      }),
+    ),
   ).toEqual(
     simplifyExpectedWorkspacesResult({
       workspaces: [
@@ -142,7 +142,7 @@ test("Find workspaces basic behavior", async () => {
           path: "libraries/libraryB",
         },
       ],
-    })
+    }),
   );
 
   expect(
@@ -150,8 +150,8 @@ test("Find workspaces basic behavior", async () => {
       findWorkspaces({
         rootDir: getProjectRoot("default"),
         workspaceGlobs: ["applications/*"],
-      })
-    )
+      }),
+    ),
   ).toEqual(
     simplifyExpectedWorkspacesResult({
       workspaces: [
@@ -166,7 +166,7 @@ test("Find workspaces basic behavior", async () => {
           path: "applications/applicationB",
         },
       ],
-    })
+    }),
   );
 });
 
@@ -174,48 +174,48 @@ test("Invalid workspaces from test projects", async () => {
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidBadJson"),
-    })
+    }),
   ).toThrow(ERRORS.InvalidPackageJson);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidNoName"),
-    })
+    }),
   ).toThrow(ERRORS.NoWorkspaceName);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidDuplicateName"),
-    })
+    }),
   ).toThrow(ERRORS.DuplicateWorkspaceName);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidBadTypeWorkspaces"),
-    })
+    }),
   ).toThrow(ERRORS.InvalidWorkspaces);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidBadTypeScripts"),
-    })
+    }),
   ).toThrow(ERRORS.InvalidScripts);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidNoPackageJson"),
-    })
+    }),
   ).toThrow(ERRORS.PackageNotFound);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidBadWorkspaceGlobType"),
-    })
+    }),
   ).toThrow(ERRORS.InvalidWorkspacePattern);
 
   expect(() =>
     findWorkspacesFromPackage({
       rootDir: getProjectRoot("invalidBadWorkspaceGlobOutsideRoot"),
-    })
+    }),
   ).toThrow(ERRORS.InvalidWorkspacePattern);
 });

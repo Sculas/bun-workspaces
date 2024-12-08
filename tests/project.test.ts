@@ -1,10 +1,10 @@
 import path from "path";
 import { expect, test as _test } from "bun:test";
-import { createProject, type Project } from "../src/project";
-import { getProjectRoot } from "./testProjects";
 import type { Workspace } from "../src";
-import type { ScriptMetadata } from "../src/project/project";
+import { createProject, type Project } from "../src/project";
 import { ERRORS } from "../src/project/errors";
+import type { ScriptMetadata } from "../src/project/project";
+import { getProjectRoot } from "./testProjects";
 
 const test = (name: string, callback: (project: Project) => void) =>
   _test(name, async () => {
@@ -116,7 +116,7 @@ test("Project findWorkspaceByName", async (project) => {
 
 test("Project listWorkspacesWithScript", async (project) => {
   expect(
-    project.listWorkspacesWithScript("all-workspaces").map(stripPackageJson)
+    project.listWorkspacesWithScript("all-workspaces").map(stripPackageJson),
   ).toEqual([
     {
       name: "application-a",
@@ -146,42 +146,42 @@ test("Project listWorkspacesWithScript", async (project) => {
   ]);
 
   expect(
-    project.listWorkspacesWithScript("a-workspaces").map(stripToName)
+    project.listWorkspacesWithScript("a-workspaces").map(stripToName),
   ).toEqual(["application-a", "library-a"]);
 
   expect(
-    project.listWorkspacesWithScript("b-workspaces").map(stripToName)
+    project.listWorkspacesWithScript("b-workspaces").map(stripToName),
   ).toEqual(["application-b", "library-b"]);
 
   expect(
-    project.listWorkspacesWithScript("c-workspaces").map(stripToName)
+    project.listWorkspacesWithScript("c-workspaces").map(stripToName),
   ).toEqual(["library-c"]);
 
   expect(project.listWorkspacesWithScript("not-a-script")).toEqual([]);
 
   expect(
-    project.listWorkspacesWithScript("application-a").map(stripToName)
+    project.listWorkspacesWithScript("application-a").map(stripToName),
   ).toEqual(["application-a"]);
 
   expect(
-    project.listWorkspacesWithScript("application-b").map(stripToName)
+    project.listWorkspacesWithScript("application-b").map(stripToName),
   ).toEqual(["application-b"]);
 
   expect(
-    project.listWorkspacesWithScript("library-a").map(stripToName)
+    project.listWorkspacesWithScript("library-a").map(stripToName),
   ).toEqual(["library-a"]);
 
   expect(
-    project.listWorkspacesWithScript("library-b").map(stripToName)
+    project.listWorkspacesWithScript("library-b").map(stripToName),
   ).toEqual(["library-b"]);
 
   expect(
-    project.listWorkspacesWithScript("library-c").map(stripToName)
+    project.listWorkspacesWithScript("library-c").map(stripToName),
   ).toEqual(["library-c"]);
 });
 
 const stripMetadataToWorkspaceNames = (
-  metadata: Record<string, ScriptMetadata>
+  metadata: Record<string, ScriptMetadata>,
 ) =>
   Object.values(metadata).reduce(
     (acc, { name, workspaces }) => ({
@@ -191,12 +191,12 @@ const stripMetadataToWorkspaceNames = (
         workspaces: workspaces.map(stripToName),
       },
     }),
-    {}
+    {},
   );
 
 test("Project listScriptsWithWorkspaces", async (project) => {
   expect(
-    stripMetadataToWorkspaceNames(project.listScriptsWithWorkspaces())
+    stripMetadataToWorkspaceNames(project.listScriptsWithWorkspaces()),
   ).toEqual({
     "all-workspaces": {
       name: "all-workspaces",
@@ -250,7 +250,7 @@ test("Project createScriptCommand", async (project) => {
       method: "cd",
       scriptName: "all-workspaces",
       workspaceName: "application-a",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: path.resolve(project.rootDir, "applications/applicationA"),
@@ -271,7 +271,7 @@ test("Project createScriptCommand", async (project) => {
       method: "cd",
       scriptName: "all-workspaces",
       workspaceName: "application-a",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: path.resolve(project.rootDir, "applications/applicationA"),
@@ -292,7 +292,7 @@ test("Project createScriptCommand", async (project) => {
       method: "filter",
       scriptName: "all-workspaces",
       workspaceName: "application-a",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: project.rootDir,
@@ -313,7 +313,7 @@ test("Project createScriptCommand", async (project) => {
       method: "filter",
       scriptName: "all-workspaces",
       workspaceName: "application-a",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: project.rootDir,
@@ -334,7 +334,7 @@ test("Project createScriptCommand", async (project) => {
       method: "cd",
       scriptName: "b-workspaces",
       workspaceName: "library-b",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: path.resolve(project.rootDir, "libraries/libraryB"),
@@ -355,7 +355,7 @@ test("Project createScriptCommand", async (project) => {
       method: "filter",
       scriptName: "b-workspaces",
       workspaceName: "library-b",
-    })
+    }),
   ).toEqual({
     command: {
       cwd: project.rootDir,
@@ -376,7 +376,7 @@ test("Project createScriptCommand", async (project) => {
       method: "cd",
       scriptName: "not-a-script",
       workspaceName: "library-b",
-    })
+    }),
   ).toThrow(ERRORS.WorkspaceScriptDoesNotExist);
 
   expect(() =>
@@ -385,6 +385,6 @@ test("Project createScriptCommand", async (project) => {
       method: "cd",
       scriptName: "all-workspaces",
       workspaceName: "not-a-workspace",
-    })
+    }),
   ).toThrow(ERRORS.ProjectWorkspaceNotFound);
 });

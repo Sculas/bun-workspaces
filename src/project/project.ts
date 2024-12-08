@@ -1,11 +1,11 @@
 import path from "path";
 import { findWorkspacesFromPackage, type Workspace } from "../workspaces";
+import { ERRORS } from "./errors";
 import {
   createScriptCommand,
   type CreateScriptCommandOptions,
   type ScriptCommand,
 } from "./scriptCommand";
-import { ERRORS } from "./errors";
 
 export interface ScriptMetadata {
   name: string;
@@ -33,7 +33,7 @@ export interface Project {
   listScriptsWithWorkspaces(): Record<string, ScriptMetadata>;
   findWorkspaceByName(workspaceName: string): Workspace | null;
   createScriptCommand(
-    options: CreateProjectScriptCommandOptions
+    options: CreateProjectScriptCommandOptions,
   ): CreateProjectScriptCommandResult;
 }
 
@@ -56,7 +56,7 @@ class _Project implements Project {
 
   listWorkspacesWithScript(scriptName: string): Workspace[] {
     return this.workspaces.filter(
-      (workspace) => workspace.packageJson.scripts?.[scriptName]
+      (workspace) => workspace.packageJson.scripts?.[scriptName],
     );
   }
 
@@ -64,7 +64,7 @@ class _Project implements Project {
     const scripts = new Set<string>();
     this.workspaces.forEach((workspace) => {
       Object.keys(workspace.packageJson.scripts ?? {}).forEach((script) =>
-        scripts.add(script)
+        scripts.add(script),
       );
     });
     return Array.from(scripts)
@@ -77,7 +77,7 @@ class _Project implements Project {
           ...acc,
           [name]: { name, workspaces },
         }),
-        {} as Record<string, ScriptMetadata>
+        {} as Record<string, ScriptMetadata>,
       );
   }
 
@@ -89,21 +89,21 @@ class _Project implements Project {
   }
 
   createScriptCommand(
-    options: CreateProjectScriptCommandOptions
+    options: CreateProjectScriptCommandOptions,
   ): CreateProjectScriptCommandResult {
     const workspace = this.findWorkspaceByName(options.workspaceName);
     if (!workspace) {
       throw new ERRORS.ProjectWorkspaceNotFound(
-        `Workspace not found: ${JSON.stringify(options.workspaceName)}`
+        `Workspace not found: ${JSON.stringify(options.workspaceName)}`,
       );
     }
     if (!workspace.packageJson.scripts?.[options.scriptName]) {
       throw new ERRORS.WorkspaceScriptDoesNotExist(
         `Script not found in workspace ${JSON.stringify(
-          workspace.name
+          workspace.name,
         )}: ${JSON.stringify(options.scriptName)} (available: ${
           Object.keys(workspace.packageJson.scripts).join(", ") || "none"
-        }`
+        }`,
       );
     }
     return {

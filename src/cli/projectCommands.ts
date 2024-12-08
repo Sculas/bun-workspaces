@@ -1,10 +1,7 @@
-import { Option, type Command } from "commander";
-import type { Project } from "../project";
+import { type Command } from "commander";
 import { logger } from "../internal/logger";
-import { Readable } from "node:stream";
-import { SCRIPT_COMMAND_METHODS } from "../project/scriptCommand";
+import type { Project } from "../project";
 import type { Workspace } from "../workspaces";
-import type { Subprocess } from "bun";
 
 const printWorkspaceInfo = (workspace: Workspace) => {
   console.log(`Workspace: ${workspace.name}`);
@@ -13,7 +10,7 @@ const printWorkspaceInfo = (workspace: Workspace) => {
   console.log(
     ` - Scripts: ${Object.keys(workspace.packageJson.scripts)
       .sort()
-      .join(", ")}`
+      .join(", ")}`,
   );
 };
 
@@ -98,8 +95,8 @@ const scriptInfo = (program: Command, project: Project) => {
       if (!scriptMetadata) {
         logger.error(
           `Script not found: ${JSON.stringify(
-            script
-          )} (available: ${Object.keys(scripts).join(", ")})`
+            script,
+          )} (available: ${Object.keys(scripts).join(", ")})`,
         );
         return;
       }
@@ -120,8 +117,8 @@ const runScript = (program: Command, project: Project) => {
             ? "workspaces " + workspaces.join(", ")
             : "all workspaces"
         } (parallel: ${!!options.parallel}, method: ${JSON.stringify(
-          options.method
-        )}, args: ${JSON.stringify(options.args)})`
+          options.method,
+        )}, args: ${JSON.stringify(options.args)})`,
       );
 
       workspaces = workspaces.length
@@ -139,7 +136,7 @@ const runScript = (program: Command, project: Project) => {
           workspaceName,
           method: "cd",
           args: options.args.replace(/<workspace>/g, workspaceName),
-        })
+        }),
       );
 
       const runCommand = async ({
@@ -152,7 +149,7 @@ const runScript = (program: Command, project: Project) => {
         logger.debug(
           `Running script ${scriptName} in workspace ${workspace.name} (cwd: ${
             command.cwd
-          }): ${splitCommand.join(" ")}`
+          }): ${splitCommand.join(" ")}`,
         );
 
         const silent = logger.level === "silent";
@@ -160,8 +157,8 @@ const runScript = (program: Command, project: Project) => {
         if (!silent) {
           console.log(
             `Running script ${JSON.stringify(
-              scriptName
-            )} in workspace ${JSON.stringify(workspace.name)}`
+              scriptName,
+            )} in workspace ${JSON.stringify(workspace.name)}`,
           );
         }
 
@@ -193,7 +190,7 @@ const runScript = (program: Command, project: Project) => {
         success,
       }: (typeof scriptCommands)[number] & { success: boolean }) => {
         logger.info(
-          `${success ? "✅" : "❌"} ${workspace.name}: ${scriptName}`
+          `${success ? "✅" : "❌"} ${workspace.name}: ${scriptName}`,
         );
         if (!success) {
           process.exit(1);
@@ -202,7 +199,7 @@ const runScript = (program: Command, project: Project) => {
 
       if (options.parallel) {
         for await (const result of await Promise.allSettled(
-          scriptCommands.map(runCommand)
+          scriptCommands.map(runCommand),
         )) {
           if (result.status === "rejected") {
             handleError(result.reason);
