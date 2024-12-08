@@ -10,8 +10,8 @@
     "cli:dev": "NODE_ENV=development bun run bin/cli.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
-    "format-all": "prettier --write .",
-    "format-check-all": "prettier --check ."
+    "format": "prettier --write .",
+    "format-check": "prettier --check ."
   },
   "custom": {
     "bunVersion": {
