@@ -7,6 +7,6 @@
     "EditorConfig.EditorConfig",
     "dbaeumer.vscode-eslint",
     "github.vscode-github-actions",
-    "aaron-bond.better-comments",
+    "aaron-bond.better-comments"
   ]
 }
