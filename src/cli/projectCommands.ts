@@ -27,11 +27,11 @@ const listWorkspaces = ({
   printLines,
 }: ProjectCommandsContext) => {
   program
-    .command("list-workspaces")
+    .command("list-workspaces [pattern]")
     .aliases(["ls", "list"])
     .description("List all workspaces")
     .option("--name-only", "Only show workspace names")
-    .action((options) => {
+    .action((pattern, options) => {
       logger.debug("Command: List workspaces");
 
       if (options.more) {
@@ -39,7 +39,10 @@ const listWorkspaces = ({
       }
 
       const lines: string[] = [];
-      project.workspaces.forEach((workspace) => {
+      (pattern
+        ? project.findWorkspacesByPattern(pattern)
+        : project.workspaces
+      ).forEach((workspace) => {
         if (options.nameOnly) {
           lines.push(workspace.name);
         } else {
@@ -149,24 +152,32 @@ const runScript = ({
     .description("Run a script in all workspaces")
     .option("--parallel", "Run the scripts in parallel")
     .option("--args <args>", "Args to append to the script command", "")
-    .action(async (script: string, workspaces: string[], options) => {
+    .action(async (script: string, _workspaces: string[], options) => {
       logger.debug(
         `Command: Run script ${JSON.stringify(script)} for ${
-          workspaces.length
-            ? "workspaces " + workspaces.join(", ")
+          _workspaces.length
+            ? "workspaces " + _workspaces.join(", ")
             : "all workspaces"
         } (parallel: ${!!options.parallel}, method: ${JSON.stringify(
           options.method,
         )}, args: ${JSON.stringify(options.args)})`,
       );
 
-      workspaces = workspaces.length
-        ? workspaces
+      const workspaces = _workspaces.length
+        ? _workspaces.flatMap((workspacePattern) => {
+            if (workspacePattern.includes("*")) {
+              return project
+                .findWorkspacesByPattern(workspacePattern)
+                .filter(({ packageJson: { scripts } }) => scripts?.[script])
+                .map(({ name }) => name);
+            }
+            return [workspacePattern];
+          })
         : project.listWorkspacesWithScript(script).map(({ name }) => name);
 
       if (!workspaces.length) {
         program.error(
-          `No workspaces found for script ${JSON.stringify(script)}`,
+          `No ${_workspaces.length ? "matching " : ""}workspaces found for script ${JSON.stringify(script)}`,
         );
       }
 

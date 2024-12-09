@@ -26,6 +26,9 @@ bw ls
 # List workspace names only
 bw list-workspaces --name-only
 
+# Filter list of workspaces with wildcard
+bw list-workspaces "my-*"
+
 # List all workspace scripts
 bw list-scripts
 # List script names only
@@ -50,6 +53,9 @@ bw run my-script my-workspace
 
 # Run a script for multiple workspaces
 bw run my-script workspace-a workspace-b
+
+# Run a script for workspaces using wildcard
+bw run my-script "my-workspace-*"
 
 # Run script in parallel for all workspaces
 bw run my-script --parallel

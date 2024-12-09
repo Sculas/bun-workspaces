@@ -115,6 +115,53 @@ describe("Test Project utilities", () => {
     expect(libC?.matchPattern).toEqual("libraries/**/*");
   });
 
+  test("Project.prototype.findWorkspacesByPattern", async (project) => {
+    expect(project.findWorkspacesByPattern("not-a-workspace")).toEqual([]);
+
+    expect(project.findWorkspacesByPattern("").map(stripToName)).toEqual([]);
+    expect(project.findWorkspacesByPattern("*").map(stripToName)).toEqual([
+      "application-a",
+      "application-b",
+      "library-a",
+      "library-b",
+      "library-c",
+    ]);
+
+    expect(
+      project.findWorkspacesByPattern("application-*").map(stripToName),
+    ).toEqual(["application-a", "application-b"]);
+
+    expect(
+      project.findWorkspacesByPattern("library-*").map(stripToName),
+    ).toEqual(["library-a", "library-b", "library-c"]);
+
+    expect(
+      project.findWorkspacesByPattern("library-c").map(stripToName),
+    ).toEqual(["library-c"]);
+
+    expect(
+      project.findWorkspacesByPattern("library-c*").map(stripToName),
+    ).toEqual(["library-c"]);
+
+    expect(project.findWorkspacesByPattern("*-c").map(stripToName)).toEqual([
+      "library-c",
+    ]);
+
+    expect(project.findWorkspacesByPattern("*-b").map(stripToName)).toEqual([
+      "application-b",
+      "library-b",
+    ]);
+
+    expect(project.findWorkspacesByPattern("*a*-a*").map(stripToName)).toEqual([
+      "application-a",
+      "library-a",
+    ]);
+
+    expect(
+      project.findWorkspacesByPattern("**b****-*b**").map(stripToName),
+    ).toEqual(["library-b"]);
+  });
+
   test("Project.prototype.listWorkspacesWithScript", async (project) => {
     expect(
       project.listWorkspacesWithScript("all-workspaces").map(stripPackageJson),

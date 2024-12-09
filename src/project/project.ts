@@ -1,4 +1,5 @@
 import path from "path";
+import { createWildcardRegex } from "../internal/regex";
 import { findWorkspacesFromPackage, type Workspace } from "../workspaces";
 import { ERRORS } from "./errors";
 import {
@@ -32,6 +33,7 @@ export interface Project {
   listWorkspacesWithScript(scriptName: string): Workspace[];
   listScriptsWithWorkspaces(): Record<string, ScriptMetadata>;
   findWorkspaceByName(workspaceName: string): Workspace | null;
+  findWorkspacesByPattern(workspaceName: string): Workspace[];
   createScriptCommand(
     options: CreateProjectScriptCommandOptions,
   ): CreateProjectScriptCommandResult;
@@ -86,6 +88,13 @@ class _Project implements Project {
       this.workspaces.find((workspace) => workspace.name === workspaceName) ??
       null
     );
+  }
+
+  /** Accepts wildcard for finding a list of workspaces */
+  findWorkspacesByPattern(workspacePattern: string): Workspace[] {
+    if (!workspacePattern) return [];
+    const regex = createWildcardRegex(workspacePattern);
+    return this.workspaces.filter((workspace) => regex.test(workspace.name));
   }
 
   createScriptCommand(
