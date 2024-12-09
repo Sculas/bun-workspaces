@@ -43,19 +43,19 @@ bw script-info my-script --workspaces-only
 # Run a script for all
 # workspaces that have it
 # in their `scripts` field
-bw run-script my-script
+bw run my-script
 
 # Run a script for a specific workspace
-bw run-script my-script my-workspace
+bw run my-script my-workspace
 
 # Run a script for multiple workspaces
-bw run-script my-script workspace-a workspace-b
+bw run my-script workspace-a workspace-b
 
 # Run script in parallel for all workspaces
-bw run-script my-script --parallel
+bw run my-script --parallel
 
 # Append args to each script call
-bw run-script my-script --args "--my --args"
+bw run my-script --args "--my --args"
 
 # Help (--help can also be passed to any command)
 bw help
