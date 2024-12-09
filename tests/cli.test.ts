@@ -1,12 +1,13 @@
 import { test as _test, expect, describe, mock } from "bun:test";
-import { CliProgram, createCliProgram } from "../src/cli/cli";
-import { getProjectRoot } from "./testProjects";
 import packageJson from "../package.json";
+import { CliProgram, createCliProgram } from "../src/cli/cli";
 import { OUTPUT_CONFIG } from "../src/cli/output";
+import { createRawPattern } from "../src/internal/regex";
+import { getProjectRoot } from "./testProjects";
 
 const createWriteOutMock = () => mock(OUTPUT_CONFIG.writeOut);
 const createWriteErrMock = () => mock(OUTPUT_CONFIG.writeErr);
-const createHandleErrorMock = () => mock((error: Error) => void 0);
+const createHandleErrorMock = () => mock((_error: Error) => void 0);
 
 interface TestContext {
   run: (...argv: string[]) => void;
@@ -35,7 +36,7 @@ const test = (name: string, fn: (context: TestContext) => void, only = false) =>
     const createPattern = (pattern: string | RegExp) =>
       pattern instanceof RegExp
         ? pattern
-        : new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+        : new RegExp(createRawPattern(pattern), "i");
 
     await fn({
       run: (...argv: string[]) => {
@@ -138,6 +139,21 @@ describe("Test CLI", () => {
             "\n?$",
         ),
       );
+    });
+
+    test("Using wildcard pattern", async ({ run, assertLastWrite }) => {
+      await run("list-workspaces *-a");
+      assertLastWrite("application-a");
+      assertLastWrite("library-a");
+
+      await run("list-workspaces *-a --name-only");
+      assertLastWrite(/^\n?application-a\nlibrary-a\n?$/);
+
+      await run("list-workspaces **b*-***b** --name-only");
+      assertLastWrite(/^\n?library-b\n?$/);
+
+      await run("list-workspaces bad-wrong-stuff");
+      assertLastWrite("No workspaces found");
     });
 
     test("Empty project", async ({ run, assertLastWrite }) => {
@@ -302,6 +318,10 @@ describe("Test CLI", () => {
       expect(handleErrorSpy).not.toBeCalled();
       expect(writeErrSpy).not.toBeCalled();
 
+      await run("run b-workspaces *-b");
+      expect(handleErrorSpy).not.toBeCalled();
+      expect(writeErrSpy).not.toBeCalled();
+
       await run(
         "run",
         "b-workspaces",
@@ -318,8 +338,20 @@ describe("Test CLI", () => {
       await run("run not-found");
       assertLastWrite('No workspaces found for script "not-found"', true);
 
+      await run("run not-found *not-found*");
+      assertLastWrite(
+        'No matching workspaces found for script "not-found"',
+        true,
+      );
+
       await run("run all-workspaces not-found");
       assertLastWrite('Workspace not found: "not-found"', true);
+
+      await run("run b-workspaces *-a");
+      assertLastWrite(
+        'No matching workspaces found for script "b-workspaces"',
+        true,
+      );
     });
   });
 });

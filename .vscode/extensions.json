@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "oven.bun-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "jasonnutter.vscode-codeowners",
+    "EditorConfig.EditorConfig",
+    "dbaeumer.vscode-eslint",
+    "github.vscode-github-actions",
+    "aaron-bond.better-comments"
+  ]
+}
