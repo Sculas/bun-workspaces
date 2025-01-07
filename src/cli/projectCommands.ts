@@ -1,5 +1,6 @@
 import { type Command } from "commander";
-import { logger } from "../internal/logger";
+import { BunWorkspacesError } from "../internal/error";
+import { logger, createLogger } from "../internal/logger";
 import type { Project } from "../project";
 import type { Workspace } from "../workspaces";
 
@@ -21,6 +22,9 @@ const createScriptInfoLines = (script: string, workspaces: Workspace[]) => [
   ...workspaces.map((workspace) => ` - ${workspace.name}`),
 ];
 
+const createJsonLines = (data: unknown, options: { pretty: boolean }) =>
+  JSON.stringify(data, null, options.pretty ? 2 : undefined).split("\n");
+
 const listWorkspaces = ({
   program,
   project,
@@ -31,31 +35,49 @@ const listWorkspaces = ({
     .aliases(["ls", "list"])
     .description("List all workspaces")
     .option("--name-only", "Only show workspace names")
-    .action((pattern, options) => {
-      logger.debug("Command: List workspaces");
+    .option("--json", "Output as JSON")
+    .option("--pretty", "Pretty print JSON")
+    .action(
+      (
+        pattern,
+        options: { nameOnly: boolean; json: boolean; pretty: boolean },
+      ) => {
+        logger.debug(
+          `Command: List workspaces (options: ${JSON.stringify(options)})`,
+        );
 
-      if (options.more) {
-        logger.debug("Showing more metadata");
-      }
+        const lines: string[] = [];
 
-      const lines: string[] = [];
-      (pattern
-        ? project.findWorkspacesByPattern(pattern)
-        : project.workspaces
-      ).forEach((workspace) => {
-        if (options.nameOnly) {
-          lines.push(workspace.name);
+        const workspaces = pattern
+          ? project.findWorkspacesByPattern(pattern)
+          : project.workspaces;
+
+        if (options.json) {
+          lines.push(
+            ...createJsonLines(
+              options.nameOnly
+                ? workspaces.map(({ name }) => name)
+                : workspaces,
+              options,
+            ),
+          );
         } else {
-          lines.push(...createWorkspaceInfoLines(workspace));
+          workspaces.forEach((workspace) => {
+            if (options.nameOnly) {
+              lines.push(workspace.name);
+            } else {
+              lines.push(...createWorkspaceInfoLines(workspace));
+            }
+          });
         }
-      });
 
-      if (!lines.length) {
-        lines.push("No workspaces found");
-      }
+        if (!lines.length) {
+          lines.push("No workspaces found");
+        }
 
-      printLines(...lines);
-    });
+        printLines(...lines);
+      },
+    );
 };
 
 const listScripts = ({
@@ -67,27 +89,50 @@ const listScripts = ({
     .command("list-scripts")
     .description("List all scripts available with their workspaces")
     .option("--name-only", "Only show script names")
-    .action((options) => {
-      logger.debug("Command: List scripts");
+    .option("--json", "Output as JSON")
+    .option("--pretty", "Pretty print JSON")
+    .action(
+      (options: { nameOnly: boolean; json: boolean; pretty: boolean }) => {
+        logger.debug(
+          `Command: List scripts (options: ${JSON.stringify(options)})`,
+        );
 
-      const scripts = project.listScriptsWithWorkspaces();
-      const lines: string[] = [];
-      Object.values(scripts)
-        .sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB))
-        .forEach(({ name, workspaces }) => {
-          if (options.nameOnly) {
-            lines.push(name);
-          } else {
-            lines.push(...createScriptInfoLines(name, workspaces));
+        const scripts = project.listScriptsWithWorkspaces();
+        const lines: string[] = [];
+
+        if (options.json) {
+          lines.push(
+            ...createJsonLines(
+              options.nameOnly
+                ? Object.keys(scripts)
+                : Object.values(scripts).map(({ workspaces, ...rest }) => ({
+                    ...rest,
+                    workspaces: workspaces.map(({ name }) => name),
+                  })),
+              options,
+            ),
+          );
+        } else {
+          Object.values(scripts)
+            .sort(({ name: nameA }, { name: nameB }) =>
+              nameA.localeCompare(nameB),
+            )
+            .forEach(({ name, workspaces }) => {
+              if (options.nameOnly) {
+                lines.push(name);
+              } else {
+                lines.push(...createScriptInfoLines(name, workspaces));
+              }
+            });
+
+          if (!lines.length) {
+            lines.push("No scripts found");
           }
-        });
+        }
 
-      if (!lines.length) {
-        lines.push("No scripts found");
-      }
-
-      printLines(...lines);
-    });
+        printLines(...lines);
+      },
+    );
 };
 
 const workspaceInfo = ({
@@ -99,17 +144,29 @@ const workspaceInfo = ({
     .command("workspace-info <workspace>")
     .aliases(["info"])
     .description("Show information about a workspace")
-    .action((workspaceName) => {
-      logger.debug(`Command: Workspace info for ${workspaceName}`);
+    .option("--json", "Output as JSON")
+    .option("--pretty", "Pretty print JSON")
+    .action(
+      (workspaceName: string, options: { json: boolean; pretty: boolean }) => {
+        logger.debug(
+          `Command: Workspace info for ${workspaceName} (options: ${JSON.stringify(options)})`,
+        );
 
-      const workspace = project.findWorkspaceByName(workspaceName);
-      if (!workspace) {
-        logger.error(`Workspace not found: ${JSON.stringify(workspaceName)}`);
-        return;
-      }
+        const workspace = project.findWorkspaceByName(workspaceName);
+        if (!workspace) {
+          logger.error(
+            `Workspace not found: (options: ${JSON.stringify(workspaceName)})`,
+          );
+          return;
+        }
 
-      printLines(...createWorkspaceInfoLines(workspace));
-    });
+        printLines(
+          ...(options.json
+            ? createJsonLines(workspace, options)
+            : createWorkspaceInfoLines(workspace)),
+        );
+      },
+    );
 };
 
 const scriptInfo = ({
@@ -121,32 +178,49 @@ const scriptInfo = ({
     .command("script-info <script>")
     .description("Show information about a script")
     .option("--workspaces-only", "Only show script's workspace names")
-    .action((script, options) => {
-      logger.debug(`Command: Script info for ${script}`);
-
-      const scripts = project.listScriptsWithWorkspaces();
-      const scriptMetadata = scripts[script];
-      if (!scriptMetadata) {
-        printLines(
-          `Script not found: ${JSON.stringify(
-            script,
-          )} (available: ${Object.keys(scripts).join(", ")})`,
+    .option("--json", "Output as JSON")
+    .option("--pretty", "Pretty print JSON")
+    .action(
+      (
+        script,
+        options: { workspacesOnly: boolean; json: boolean; pretty: boolean },
+      ) => {
+        logger.debug(
+          `Command: Script info for ${script} (options: ${JSON.stringify(options)})`,
         );
-        return;
-      }
-      printLines(
-        ...(options.workspacesOnly
-          ? scriptMetadata.workspaces.map(({ name }) => name)
-          : createScriptInfoLines(script, scriptMetadata.workspaces)),
-      );
-    });
+
+        const scripts = project.listScriptsWithWorkspaces();
+        const scriptMetadata = scripts[script];
+        if (!scriptMetadata) {
+          printLines(
+            `Script not found: ${JSON.stringify(
+              script,
+            )} (available: ${Object.keys(scripts).join(", ")})`,
+          );
+          return;
+        }
+        printLines(
+          ...(options.json
+            ? createJsonLines(
+                options.workspacesOnly
+                  ? scriptMetadata.workspaces.map(({ name }) => name)
+                  : {
+                      name: scriptMetadata.name,
+                      workspaces: scriptMetadata.workspaces.map(
+                        ({ name }) => name,
+                      ),
+                    },
+                options,
+              )
+            : options.workspacesOnly
+              ? scriptMetadata.workspaces.map(({ name }) => name)
+              : createScriptInfoLines(script, scriptMetadata.workspaces)),
+        );
+      },
+    );
 };
 
-const runScript = ({
-  program,
-  project,
-  printLines,
-}: ProjectCommandsContext) => {
+const runScript = ({ program, project }: ProjectCommandsContext) => {
   program
     .command("run <script> [workspaces...]")
     .description("Run a script in all workspaces")
@@ -201,9 +275,11 @@ const runScript = ({
         scriptName,
         workspace,
       }: (typeof scriptCommands)[number]) => {
+        const commandLogger = createLogger(`${workspace.name}:${scriptName}`);
+
         const splitCommand = command.command.split(/\s+/g);
 
-        logger.debug(
+        commandLogger.debug(
           `Running script ${scriptName} in workspace ${workspace.name} (cwd: ${
             command.cwd
           }): ${splitCommand.join(" ")}`,
@@ -211,20 +287,24 @@ const runScript = ({
 
         const silent = logger.level === "silent";
 
-        if (!silent) {
-          printLines(
-            `Running script ${JSON.stringify(
-              scriptName,
-            )} in workspace ${JSON.stringify(workspace.name)}`,
-          );
-        }
-
         const proc = Bun.spawn(command.command.split(/\s+/g), {
           cwd: command.cwd,
           env: process.env,
-          stdout: silent ? "ignore" : "inherit",
-          stderr: silent ? "ignore" : "inherit",
+          stdout: silent ? "ignore" : "pipe",
+          stderr: silent ? "ignore" : "pipe",
         });
+
+        if (proc.stdout) {
+          for await (const chunk of proc.stdout) {
+            commandLogger.info(new TextDecoder().decode(chunk).trim());
+          }
+        }
+
+        if (proc.stderr) {
+          for await (const chunk of proc.stderr) {
+            commandLogger.error(new TextDecoder().decode(chunk).trim());
+          }
+        }
 
         await proc.exited;
 
@@ -233,30 +313,20 @@ const runScript = ({
           workspace,
           command,
           success: proc.exitCode === 0,
+          error:
+            proc.exitCode === 0
+              ? null
+              : new BunWorkspacesError(
+                  `Script exited with code ${proc.exitCode}`,
+                ),
         };
       };
 
-      const handleError = (error: unknown, workspace: string) => {
-        logger.error(error);
-        program.error(
-          `Script failed in ${workspace} (error: ${JSON.stringify((error as Error).message ?? error)})`,
-        );
-      };
-
-      const handleResult = ({
-        scriptName,
-        workspace,
-        success,
-      }: (typeof scriptCommands)[number] & { success: boolean }) => {
-        logger.info(
-          `${success ? "✅" : "❌"} ${workspace.name}: ${scriptName}`,
-        );
-        if (!success) {
-          program.error(
-            `Script ${scriptName} failed in workspace ${workspace.name}`,
-          );
-        }
-      };
+      const results = [] as {
+        success: boolean;
+        workspaceName: string;
+        error: Error | null;
+      }[];
 
       if (options.parallel) {
         let i = 0;
@@ -264,9 +334,17 @@ const runScript = ({
           scriptCommands.map(runCommand),
         )) {
           if (result.status === "rejected") {
-            handleError(result.reason, workspaces[i]);
+            results.push({
+              success: false,
+              workspaceName: workspaces[i],
+              error: result.reason,
+            });
           } else {
-            handleResult(result.value);
+            results.push({
+              success: result.value.success,
+              workspaceName: workspaces[i],
+              error: result.value.error,
+            });
           }
           i++;
         }
@@ -275,12 +353,35 @@ const runScript = ({
         for (const command of scriptCommands) {
           try {
             const result = await runCommand(command);
-            handleResult(result);
+            results.push({
+              success: result.success,
+              workspaceName: workspaces[i],
+              error: result.error,
+            });
           } catch (error) {
-            handleError(error, workspaces[i]);
+            results.push({
+              success: false,
+              workspaceName: workspaces[i],
+              error: error as Error,
+            });
           }
+          i++;
         }
-        i++;
+      }
+
+      let failCount = 0;
+      results.forEach(({ success, workspaceName }) => {
+        if (!success) failCount++;
+        logger.info(`${success ? "✅" : "❌"} ${workspaceName}: ${script}`);
+      });
+
+      const s = results.length === 1 ? "" : "s";
+      if (failCount) {
+        const message = `${failCount} of ${results.length} script${s} failed`;
+        logger.info(message);
+        process.exit(1);
+      } else {
+        logger.info(`${results.length} script${s} ran successfully`);
       }
     });
 };
