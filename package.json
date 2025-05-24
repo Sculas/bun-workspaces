@@ -8,8 +8,8 @@
   },
   "custom": {
     "bunVersion": {
-      "build": "1.1.38",
-      "libraryConsumer": "^1.1.x"
+      "build": "1.2.14",
+      "libraryConsumer": "^1.2.x"
     }
   },
   "scripts": {

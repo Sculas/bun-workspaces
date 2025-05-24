@@ -87,13 +87,19 @@ const validateWorkspacePatterns = (
 ) => {
   const workspaces: string[] = [];
   if (json.workspaces) {
-    if (!Array.isArray(json.workspaces)) {
+    let workspacesArray: string[];
+
+    if (Array.isArray(json.workspaces)) {
+      workspacesArray = json.workspaces as string[];
+    } else if (hasPackagesKey(json.workspaces)) {
+      workspacesArray = json.workspaces.packages;
+    } else {
       throw new ERRORS.InvalidWorkspaces(
         `Expected package.json to have an array "workspaces" field`,
       );
     }
 
-    for (const workspacePattern of json.workspaces) {
+    for (const workspacePattern of workspacesArray) {
       if (validateWorkspacePattern(workspacePattern, rootDir)) {
         workspaces.push(workspacePattern);
       }
@@ -101,6 +107,17 @@ const validateWorkspacePatterns = (
   }
 
   return workspaces;
+};
+
+const hasPackagesKey = (
+  obj: unknown,
+): obj is Record<string, unknown> & { packages: string[] } => {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "packages" in obj &&
+    Array.isArray(obj.packages)
+  );
 };
 
 const validateScripts = (json: UnknownPackageJson) => {
@@ -158,7 +175,9 @@ export const resolvePackageJsonContent = (
       : ((json.name as string) ?? ""),
     workspaces: validations.includes("workspaces")
       ? validateWorkspacePatterns(json, rootDir)
-      : ((json?.workspaces ?? []) as string[]),
+      : (((json?.workspaces as any)?.packages ??
+          json?.workspaces ??
+          []) as string[]),
     scripts: validations.includes("scripts")
       ? validateScripts(json)
       : ((json.scripts ?? {}) as Record<string, string>),
